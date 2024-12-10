@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de Hachage</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        input, select, button {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #result {
+            background-color: #f4f7f6;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 1.2em;
+            color: #333;
+            margin-top: 20px;
+            display: none;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        #hashValue {
+            display: block;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .history {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .history h2 {
+            margin-bottom: 10px;
+        }
+
+        .history ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .history li {
+            padding: 5px;
+            background-color: #f9f9f9;
+            margin: 5px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Calculateur de Hachage</h1>
+
+    <form id="hashForm">
+        <label for="inputText">Entrée :</label>
+        <input type="text" id="inputText" name="inputText" required>
+
+        <label for="algorithmSelect">Choisir un algorithme (optionnel) :</label>
+        <select id="algorithmSelect" name="algorithm">
+            <option value="sha256">SHA256</option>
+            <option value="md5">MD5</option>
+            <option value="sha1">SHA1</option>
+        </select>
+
+        <button type="submit">Calculer le Hachage</button>
+    </form>
+
+    <div id="result">
+        <h3>Résultat :</h3>
+        <p><strong>Hachage :</strong> <span id="hashValue"></span></p>
+    </div>
+
+    <div class="history">
+        <h2>Historique des Hachages</h2>
+        <ul id="historyList">
+            <!-- Historique sera ajouté ici -->
+        </ul>
+    </div>
+
+    <script>
+        document.getElementById("hashForm").addEventListener("submit", function(event) {
+            event.preventDefault();  // Empêche l'envoi du formulaire
+
+            const inputText = document.getElementById("inputText").value;
+            const algorithm = document.getElementById("algorithmSelect").value;
+
+            fetch('http://127.0.0.1:5000/hash', {  // Assurez-vous que l'URL est correcte
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ input: inputText, algorithm: algorithm })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.hash) {
+                    document.getElementById("result").style.display = "block";  // Affiche le résultat
+                    document.getElementById("hashValue").textContent = data.hash;  // Affiche le hachage
+                } else {
+                    alert("Erreur lors du calcul du hachage.");
+                }
+            })
+            .catch(error => {
+                alert("Une erreur est survenue.");
+                console.error(error);
+            });
+        });
+
+        // Charger l'historique à chaque rafraîchissement de la page
+        window.onload = function() {
+            fetch('http://127.0.0.1:5000/history')
+                .then(response => response.json())
+                .then(data => {
+                    const historyList = document.getElementById('historyList');
+                    historyList.innerHTML = '';
+                    if (data.length === 0) {
+                        historyList.innerHTML = '<li>Aucun historique disponible</li>';
+                    } else {
+                        data.forEach(item => {
+                            const li = document.createElement('li');
+                            li.textContent = `${item.input} => ${item.hash} (${item.algorithm})`;
+                            historyList.appendChild(li);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur lors du chargement de l'historique :", error);
+                });
+        };
+    </script>
+
+</body>
+</html>
